@@ -1,0 +1,993 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Character Codex</title>
+
+  <style>
+    :root {
+      --bg: #e8ebef;
+      --panel: #0b1017;
+      --panel-2: #0f1620;
+      --line: rgba(255,255,255,.09);
+      --text: #f4f7fb;
+      --muted: #91a0b3;
+
+      /* 전체 포인트 컬러 */
+      --accent: #ff5757;
+      --accent-strong: #e02020;
+      --accent-soft: rgba(255,87,87,.14);
+      --accent-line: rgba(255,87,87,.28);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      min-height: 100%;
+    }
+
+    body {
+      margin: 0;
+      font-family:
+        Inter, Pretendard, "Noto Sans KR",
+        system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: var(--panel);
+      overflow-x: hidden;
+    }
+
+    button { font: inherit; }
+
+    .page-shell {
+      min-height: 100vh;
+      width: 100%;
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+      padding: 0;
+    }
+
+    .codex-card {
+      position: relative;
+      width: 100%;
+      min-height: 100vh;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px),
+        linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+        var(--panel);
+      background-size: 42px 42px;
+      border: 0;
+      display: grid;
+      grid-template-columns: minmax(260px, .92fr) minmax(330px, 1.3fr) minmax(300px, 1fr);
+      gap: clamp(16px, 2vw, 34px);
+      padding: clamp(72px, 5vw, 88px) clamp(28px, 5vw, 76px) clamp(58px, 4vw, 72px);
+      overflow: hidden;
+      box-shadow: none;
+    }
+
+    .ambient {
+      position: absolute;
+      border-radius: 999px;
+      filter: blur(28px);
+      pointer-events: none;
+    }
+
+    .ambient-a {
+      width: 360px;
+      height: 360px;
+      left: 43%;
+      top: 15%;
+      background: radial-gradient(circle, rgba(255,87,87,.18), transparent 68%);
+    }
+
+    .ambient-b {
+      width: 250px;
+      height: 250px;
+      right: 2%;
+      bottom: 2%;
+      background: radial-gradient(circle, rgba(224,32,32,.10), transparent 70%);
+    }
+
+    .left-panel,
+    .right-panel,
+    .character-stage {
+      position: relative;
+      z-index: 2;
+      min-width: 0;
+    }
+
+    .left-panel,
+    .right-panel {
+      align-self: center;
+    }
+
+    .eyebrow,
+    .small-label {
+      color: var(--accent);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .19em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 7px 0 8px;
+      font-size: clamp(42px, 5vw, 78px);
+      line-height: .95;
+      letter-spacing: -.055em;
+      max-width: 480px;
+      overflow-wrap: anywhere;
+    }
+
+    .meta-row {
+      display: flex;
+      gap: 8px;
+      margin: 18px 0 30px;
+      flex-wrap: wrap;
+    }
+
+    .meta-chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-line);
+      color: var(--accent);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .08em;
+    }
+
+    .meta-chip.soft {
+      background: rgba(255,255,255,.04);
+      color: #aeb9c7;
+      border-color: var(--line);
+    }
+
+    .stat-block {
+      margin: 22px 0;
+    }
+
+    .stat-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .stat-label {
+      display: block;
+      font-size: 10px;
+      color: #a8b4c3;
+      letter-spacing: .15em;
+      font-weight: 800;
+    }
+
+    .stat-head strong {
+      display: block;
+      font-size: 32px;
+      line-height: 1;
+      margin-top: 5px;
+    }
+
+    .stat-rank {
+      min-width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: rgba(255,255,255,.05);
+      border: 1px solid var(--line);
+      color: var(--accent);
+      font-weight: 900;
+    }
+
+    .stat-track {
+      width: 100%;
+      height: 7px;
+      background: rgba(255,255,255,.07);
+      overflow: hidden;
+      margin: 11px 0 9px;
+      border-radius: 999px;
+    }
+
+    .stat-track span {
+      display: block;
+      height: 100%;
+      width: 0;
+      background:
+        repeating-linear-gradient(
+          90deg,
+          var(--accent) 0 6px,
+          transparent 6px 9px
+        );
+      transition: width .7s cubic-bezier(.2,.8,.2,1);
+    }
+
+    .stat-block p,
+    .bio-card p,
+    .section-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .bio-card {
+      margin-top: 28px;
+      padding: 16px 17px;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(
+          180deg,
+          rgba(255,255,255,.035),
+          rgba(255,255,255,.018)
+        );
+    }
+
+    .bio-card p {
+      margin-top: 8px;
+    }
+
+    .character-stage {
+      min-height: 570px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      isolation: isolate;
+    }
+
+    .character-stage::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: 4%;
+      width: 62%;
+      height: 7%;
+      transform: translateX(-50%);
+      background:
+        radial-gradient(ellipse, rgba(255,87,87,.30), transparent 70%);
+      filter: blur(14px);
+      z-index: -1;
+    }
+
+    #characterImage {
+      position: relative;
+      z-index: 3;
+      display: block;
+      width: min(100%, 510px);
+      max-height: 590px;
+      object-fit: contain;
+      object-position: center bottom;
+      filter: drop-shadow(0 24px 22px rgba(0,0,0,.42));
+      transform-origin: center bottom;
+      user-select: none;
+      -webkit-user-drag: none;
+      cursor: pointer;
+      transition: filter .18s ease;
+      outline: none;
+    }
+
+    #characterImage:hover {
+      filter:
+        drop-shadow(0 24px 22px rgba(0,0,0,.42))
+        drop-shadow(0 0 12px rgba(255,87,87,.20));
+    }
+
+    #characterImage:focus-visible {
+      filter:
+        drop-shadow(0 24px 22px rgba(0,0,0,.42))
+        drop-shadow(0 0 16px rgba(255,87,87,.45));
+    }
+
+    #characterImage.intro-pop {
+      animation: characterIntro 1.05s cubic-bezier(.2,.85,.3,1) both;
+    }
+
+    @keyframes characterIntro {
+      0%   { transform: scale(.84) translateY(8px); opacity: .55; }
+      48%  { transform: scale(1.075) translateY(-4px); opacity: 1; }
+      72%  { transform: scale(.985) translateY(1px); }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    .stage-ring {
+      position: absolute;
+      border: 1px solid rgba(255,87,87,.15);
+      border-radius: 50%;
+      z-index: -1;
+    }
+
+    .ring-a {
+      width: 430px;
+      height: 430px;
+      top: 18%;
+    }
+
+    .ring-b {
+      width: 300px;
+      height: 300px;
+      top: 29%;
+      border-style: dashed;
+      opacity: .72;
+    }
+
+    .floor-glow {
+      position: absolute;
+      width: 74%;
+      height: 15%;
+      bottom: 0;
+      border-radius: 50%;
+      border: 1px solid rgba(255,87,87,.20);
+      transform: perspective(240px) rotateX(68deg);
+      background:
+        linear-gradient(
+          90deg,
+          transparent,
+          rgba(255,87,87,.10),
+          transparent
+        );
+      z-index: -1;
+    }
+
+    .image-error {
+      position: absolute;
+      left: 50%;
+      bottom: 12%;
+      transform: translateX(-50%);
+      z-index: 6;
+      width: min(90%, 420px);
+      padding: 12px 14px;
+      border: 1px solid rgba(255,120,120,.30);
+      background: rgba(60,15,18,.88);
+      color: #ffd6d9;
+      font-size: 11px;
+      line-height: 1.55;
+      text-align: center;
+      display: none;
+    }
+
+    .panel-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+
+    .panel-title-row h2 {
+      margin: 6px 0 0;
+      font-size: 24px;
+      letter-spacing: -.03em;
+    }
+
+    .status-dot {
+      font-size: 9px;
+      color: var(--accent);
+      letter-spacing: .13em;
+      font-weight: 900;
+      padding: 7px 9px;
+      border: 1px solid var(--accent-line);
+      background: var(--accent-soft);
+      border-radius: 999px;
+    }
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .section-card {
+      position: relative;
+      padding: 16px 16px 15px 18px;
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(
+          105deg,
+          rgba(255,255,255,.045),
+          rgba(255,255,255,.018)
+        );
+      overflow: hidden;
+    }
+
+    .section-card::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: var(--accent);
+      opacity: .75;
+    }
+
+    .section-index {
+      float: right;
+      color: rgba(255,255,255,.2);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: .1em;
+    }
+
+    .section-card h3 {
+      margin: 4px 0 7px;
+      font-size: 15px;
+      letter-spacing: -.01em;
+    }
+
+    .section-value {
+      color: var(--accent);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .11em;
+      text-transform: uppercase;
+    }
+
+
+    .footer-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      min-height: 34px;
+      padding: 0 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid var(--line);
+      color: #526276;
+      font-size: 8px;
+      letter-spacing: .16em;
+      z-index: 5;
+    }
+
+
+
+    .back-button {
+      position: fixed;
+      top: 18px;
+      left: 18px;
+      z-index: 200;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 0 14px;
+      border: 1px solid var(--accent-line);
+      border-radius: 999px;
+      background: rgba(11,16,23,.82);
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .04em;
+      backdrop-filter: blur(10px);
+      transition: background .18s ease, border-color .18s ease, transform .18s ease;
+    }
+
+    .back-button:hover {
+      background: var(--accent-soft);
+      border-color: rgba(255,87,87,.55);
+      transform: translateX(-2px);
+    }
+
+    .back-button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+    }
+
+    @media (max-width: 720px) {
+      .back-button {
+        top: 12px;
+        left: 12px;
+        min-height: 38px;
+        padding: 0 12px;
+      }
+    }
+
+    @media (max-width: 1080px) {
+      .codex-card {
+        grid-template-columns: 1fr 1fr;
+        min-height: auto;
+        padding-bottom: 60px;
+      }
+
+      .character-stage {
+        grid-column: 2;
+        grid-row: 1;
+        min-height: 500px;
+      }
+
+      .left-panel {
+        grid-column: 1;
+        grid-row: 1;
+      }
+
+      .right-panel {
+        grid-column: 1 / -1;
+        grid-row: 2;
+      }
+
+      .section-grid {
+        grid-template-columns: repeat(2, minmax(0,1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      body {
+        background: #0b1017;
+      }
+
+      .page-shell {
+        padding: 0;
+      }
+
+      .codex-card {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        border: 0;
+      }
+
+      .character-stage {
+        grid-column: 1;
+        grid-row: 1;
+        min-height: 410px;
+      }
+
+      .left-panel {
+        grid-column: 1;
+        grid-row: 2;
+      }
+
+      .right-panel {
+        grid-column: 1;
+        grid-row: 3;
+      }
+
+      .section-grid {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 52px;
+      }
+
+      #characterImage {
+        max-height: 440px;
+      }
+
+      .ring-a {
+        width: 320px;
+        height: 320px;
+      }
+
+      .ring-b {
+        width: 230px;
+        height: 230px;
+      }
+
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #characterImage.intro-pop {
+        animation: none;
+      }
+
+      .stat-track span {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <a id="backButton" class="back-button" href="index.html" aria-label="뒤로가기">← 뒤로가기</a>
+
+  <div class="page-shell">
+    <main class="codex-card">
+<div class="ambient ambient-a"></div>
+      <div class="ambient ambient-b"></div>
+
+      <section class="left-panel">
+        <div class="eyebrow" id="characterTag"></div>
+        <h1 id="characterName"></h1>
+
+        <div class="meta-row">
+          <span class="meta-chip" id="characterRole"></span>
+          <span class="meta-chip soft" id="characterCode"></span>
+        </div>
+
+        <div class="stat-block">
+          <div class="stat-head">
+            <div>
+              <span class="stat-label">ATTACK</span>
+              <strong id="attackValue"></strong>
+            </div>
+            <span class="stat-rank" id="attackRank"></span>
+          </div>
+          <div class="stat-track">
+            <span id="attackBar"></span>
+          </div>
+          <p id="attackDescription"></p>
+        </div>
+
+        <div class="stat-block">
+          <div class="stat-head">
+            <div>
+              <span class="stat-label">DEFENSE</span>
+              <strong id="defenseValue"></strong>
+            </div>
+            <span class="stat-rank" id="defenseRank"></span>
+          </div>
+          <div class="stat-track">
+            <span id="defenseBar"></span>
+          </div>
+          <p id="defenseDescription"></p>
+        </div>
+
+        <article class="bio-card">
+          <span class="small-label">OVERVIEW</span>
+          <p id="characterSummary"></p>
+        </article>
+      </section>
+
+      <section class="character-stage" aria-label="캐릭터 이미지 영역">
+        <div class="stage-ring ring-a"></div>
+        <div class="stage-ring ring-b"></div>
+
+        <img id="characterImage" alt="캐릭터 이미지" role="button" tabindex="0" aria-label="캐릭터 진입 애니메이션 다시 보기" />
+
+        <div class="image-error" id="imageError"></div>
+        <div class="floor-glow"></div>
+      </section>
+
+      <section class="right-panel">
+        <div class="panel-title-row">
+          <div>
+            <span class="small-label">DATABASE</span>
+            <h2>PROFILE DATA</h2>
+          </div>
+        </div>
+
+        <div class="section-grid" id="sectionGrid"></div>
+      </section>
+
+      <footer class="footer-line">
+        <span id="footerLeft"></span>
+        <span id="footerRight"></span>
+      </footer>
+    </main>
+  </div>
+<script>
+    /*
+    ================================================================
+      ★ 캐릭터 수정은 이 CHARACTER 부분만 바꾸면 됩니다. ★
+
+      GitHub Pages 권장 폴더 구조
+
+      /
+      ├─ index.html
+      ├─ character.png
+
+      중요:
+      - 파일명은 GitHub에서 대소문자를 구분합니다.
+      - character.png 와 Character.png 는 서로 다른 파일입니다.
+      - 가장 간단하게는 index.html과 이미지/음성을 같은 폴더에 두세요.
+    ================================================================
+    */
+
+    const CHARACTER = {
+      /*
+        뒤로가기 버튼 설정
+
+        예시:
+        backLink: "index.html"
+        backLink: "../index.html"
+        backLink: "https://example.com"
+
+        같은 GitHub Pages 저장소 안의 다른 HTML로 이동하려면
+        상대경로를 사용하는 것이 가장 간단합니다.
+      */
+      backLink: "https://logic-aestic.github.io/memphis-main/",
+      backText: "← 뒤로가기",
+
+      name: "H0-R8(P)",
+      tag: "CHARACTER FILE",
+      role: "ENNEAD",
+      code: "NO. 004",
+
+      /*
+        캐릭터 이미지
+
+        index.html과 같은 폴더라면:
+        image: "character.png"
+
+        images 폴더 안이라면:
+        image: "images/character.png"
+      */
+      image: "character.png",
+      imageAlt: "JANE 캐릭터 전신 이미지",
+
+      /* 공격력 / 방어력 */
+      attack: "∅",
+      attackRank: "ㅤOVERㅤ",
+      attackDescription:
+        "호루스 펄버라이저는 완전한 으뜸으로서, 존재하는 모든 것을 파괴하고 분쇄할 수 있는 자로서 빚어진 궁극의 존재이니.",
+
+      defense: "∅",
+      defenseRank: "ㅤOVERㅤ",
+      defenseDescription:
+        "그 누가 정점의 앞에 총칼을 들이밀겠느냐, 그 누가 그것의 날개깃 한 장이라도 뜯어내겠느냐.",
+
+      summary:
+        "엔네아드 제 2차석, 호루스의 휴머노이드 디바이스. 정점, 궁극, 단 하나의 왕으로서 빚어진 육신. 날 때부터 두려움을 배제한 채 태어난 존재의 위대한 발톱 아래 우리는 고개를 조아리리라.",
+
+      /* 오른쪽 설명 섹터. 자유롭게 추가 / 삭제 가능 */
+      sections: [
+        {
+          title: "HORUS PULVERIZER",
+          value: "LOOK",
+          description:
+            "호루스의 자태를 파괴적으로 해석하여 빚어낸 극한의 일체. 네 장의 날개와 거대한 자태로 하여금 자신이 모든 것의 정점임을 강조한다."
+        },
+        {
+          title: "ULTIMATE",
+          value: "PROS / CONS",
+          description:
+            "약점따위 존재치 않는 하나. 정점으로서 빚어진 존재는, 아주 작은 약점 하나조차 용납하지 않았으니. 감히 그 앞에 도전하는 자는 잘게 찢긴 잔해로서 우매한 자의 본보기가 될 것이다."
+        },
+        {
+          title: "THE APEX",
+          value: "BACKGROUND",
+          description:
+            "호루스에게 바쳐진 폭력의 구현화. 완성된 아래로 그 본래의 역할을 맡은 적 없이, 유유자적 콘수의 어딘가에 존재하고 있다."
+        },
+        {
+          title: "SILENCE",
+          value: "TIPS",
+          description:
+            "호루스 펄버라이저는 과묵하다. 과묵하고, 침묵하며, 타인과의 의사소통을 행하지 않는다."
+        }
+      ],
+
+      footerLeft: "ARCHIVE // CHARACTER DATABASE",
+      footerRight: "SYSTEM READY"
+    };
+
+    /*
+    ================================================================
+      아래는 작동 코드입니다.
+      보통 수정하지 않아도 됩니다.
+    ================================================================
+    */
+
+    (() => {
+      const $ = (id) => document.getElementById(id);
+
+      const setText = (id, value) => {
+        const element = $(id);
+        if (element) element.textContent = value ?? "";
+      };
+
+      const clamp = (value, min = 0, max = 100) =>
+        Math.min(max, Math.max(min, Number(value) || 0));
+
+      const resolveAsset = (path) => {
+        if (!path || typeof path !== "string") return "";
+        try {
+          return new URL(path.trim(), document.baseURI).href;
+        } catch (_) {
+          return path.trim();
+        }
+      };
+
+      /*
+        이미지가 없을 때 보여주는 내장 플레이스홀더.
+        별도 placeholder 파일은 필요 없습니다.
+      */
+      const placeholderSvg = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 680">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#58a6ff" stop-opacity=".23"/>
+              <stop offset="1" stop-color="#ffffff" stop-opacity=".03"/>
+            </linearGradient>
+          </defs>
+
+          <rect width="520" height="680" fill="none"/>
+
+          <circle
+            cx="260"
+            cy="165"
+            r="82"
+            fill="url(#g)"
+            stroke="#58a6ff"
+            stroke-opacity=".42"
+          />
+
+          <path
+            d="M155 595c12-167 35-287 105-287s93 120 105 287z"
+            fill="url(#g)"
+            stroke="#58a6ff"
+            stroke-opacity=".42"
+          />
+
+          <path
+            d="M130 390l-62 142M390 390l62 142M205 590l-38 85M315 590l38 85"
+            stroke="#58a6ff"
+            stroke-width="26"
+            stroke-linecap="round"
+            stroke-opacity=".34"
+          />
+
+          <text
+            x="260"
+            y="645"
+            text-anchor="middle"
+            fill="#58a6ff"
+            font-size="18"
+            font-family="Arial"
+            opacity=".8"
+          >
+            CHARACTER IMAGE
+          </text>
+        </svg>
+      `;
+
+      const placeholderDataUrl =
+        "data:image/svg+xml;charset=UTF-8," +
+        encodeURIComponent(placeholderSvg);
+
+      /* 뒤로가기 버튼 */
+      const backButton = $("backButton");
+
+      if (backButton) {
+        backButton.href = CHARACTER.backLink || "index.html";
+        backButton.textContent = CHARACTER.backText || "← 뒤로가기";
+      }
+
+      /* 기본 텍스트 */
+      document.title = `${CHARACTER.name || "Character"} | Codex`;
+
+      setText("characterTag", CHARACTER.tag);
+      setText("characterName", CHARACTER.name);
+      setText("characterRole", CHARACTER.role);
+      setText("characterCode", CHARACTER.code);
+
+      setText("attackValue", CHARACTER.attack);
+      setText("attackRank", CHARACTER.attackRank);
+      setText("attackDescription", CHARACTER.attackDescription);
+
+      setText("defenseValue", CHARACTER.defense);
+      setText("defenseRank", CHARACTER.defenseRank);
+      setText("defenseDescription", CHARACTER.defenseDescription);
+
+      setText("characterSummary", CHARACTER.summary);
+      setText("footerLeft", CHARACTER.footerLeft);
+      setText("footerRight", CHARACTER.footerRight);
+
+      /* ----------------------------------------------------------
+         캐릭터 이미지
+      ---------------------------------------------------------- */
+
+      const image = $("characterImage");
+      const imageError = $("imageError");
+      const configuredImage = (CHARACTER.image || "").trim();
+
+      image.alt =
+        CHARACTER.imageAlt ||
+        `${CHARACTER.name || "캐릭터"} 이미지`;
+
+      if (configuredImage) {
+        image.src = resolveAsset(configuredImage);
+
+        image.addEventListener(
+          "error",
+          () => {
+            image.src = placeholderDataUrl;
+
+            imageError.textContent =
+              `이미지를 찾지 못했습니다: "${configuredImage}". ` +
+              `GitHub의 실제 파일명/대소문자와 CHARACTER.image 값을 확인하세요.`;
+
+            imageError.style.display = "block";
+          },
+          { once: true }
+        );
+      } else {
+        image.src = placeholderDataUrl;
+      }
+
+      /* 이미지 로드 후 진입 애니메이션 1회 */
+      image.addEventListener(
+        "load",
+        () => {
+          image.classList.remove("intro-pop");
+
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              image.classList.add("intro-pop");
+            });
+          });
+        },
+        { once: true }
+      );
+
+      /* 스탯 바 */
+      requestAnimationFrame(() => {
+        $("attackBar").style.width =
+          `${clamp(CHARACTER.attack)}%`;
+
+        $("defenseBar").style.width =
+          `${clamp(CHARACTER.defense)}%`;
+      });
+
+      /* 오른쪽 섹터 */
+      const sectionGrid = $("sectionGrid");
+
+      (CHARACTER.sections || []).forEach((section, index) => {
+        const card = document.createElement("article");
+        card.className = "section-card";
+
+        const indexElement = document.createElement("span");
+        indexElement.className = "section-index";
+        indexElement.textContent =
+          String(index + 1).padStart(2, "0");
+
+        const valueElement = document.createElement("span");
+        valueElement.className = "section-value";
+        valueElement.textContent = section.value || "";
+
+        const titleElement = document.createElement("h3");
+        titleElement.textContent = section.title || "SECTION";
+
+        const descriptionElement = document.createElement("p");
+        descriptionElement.textContent =
+          section.description || "";
+
+        card.append(
+          indexElement,
+          valueElement,
+          titleElement,
+          descriptionElement
+        );
+
+        sectionGrid.appendChild(card);
+      });
+
+      /* ----------------------------------------------------------
+         캐릭터 클릭 → 진입 애니메이션만 다시 재생
+         음성 / 이벤트 기능 없음
+      ---------------------------------------------------------- */
+
+      const restartCharacterAnimation = () => {
+        image.classList.remove("intro-pop");
+
+        // 같은 애니메이션을 즉시 다시 재생하기 위한 reflow
+        void image.offsetWidth;
+
+        image.classList.add("intro-pop");
+      };
+
+      const activateCharacter = () => {
+        restartCharacterAnimation();
+      };
+
+      image.addEventListener("click", activateCharacter);
+
+      // 키보드 Enter / Space도 동일하게 작동
+      image.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+
+        event.preventDefault();
+        activateCharacter();
+      });
+
+    })();
+  </script>
+</body>
+</html>
