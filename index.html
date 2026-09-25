@@ -100,6 +100,7 @@
     .left-panel,
     .right-panel {
       align-self: center;
+      z-index: 4;
     }
 
     .eyebrow,
@@ -220,12 +221,9 @@
       margin-top: 28px;
       padding: 16px 17px;
       border: 1px solid var(--line);
-      background:
-        linear-gradient(
-          180deg,
-          rgba(255,255,255,.035),
-          rgba(255,255,255,.018)
-        );
+      background: rgba(15,22,32,.64);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
     }
 
     .bio-card p {
@@ -238,6 +236,7 @@
       align-items: flex-end;
       justify-content: center;
       isolation: isolate;
+      z-index: 1;
     }
 
     .character-stage::after {
@@ -258,12 +257,13 @@
       position: relative;
       z-index: 3;
       display: block;
-      width: min(100%, 510px);
-      max-height: 590px;
+      width: min(125%, 650px);
+      max-height: 700px;
       object-fit: contain;
       object-position: center bottom;
       filter: drop-shadow(0 24px 22px rgba(0,0,0,.42));
       transform-origin: center bottom;
+      scale: 1.2;
       user-select: none;
       -webkit-user-drag: none;
       cursor: pointer;
@@ -385,12 +385,9 @@
       position: relative;
       padding: 16px 16px 15px 18px;
       border: 1px solid var(--line);
-      background:
-        linear-gradient(
-          105deg,
-          rgba(255,255,255,.045),
-          rgba(255,255,255,.018)
-        );
+      background: rgba(15,22,32,.60);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
       overflow: hidden;
     }
 
@@ -557,7 +554,7 @@
       }
 
       #characterImage {
-        max-height: 440px;
+        max-height: 520px;
       }
 
       .ring-a {
